@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 
+
 <html lang="en">
     <head>
         <meta charset="utf-8">
@@ -33,17 +34,29 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="#createBoard" style="color: white;">Create Board</a>
                     </li>
+                    <li class="nav-item-active">
+                        <a class="nav-link" href="#delete" style="color: white;">Delete User</a>
+                    </li>
                 </ul>
             </div>
 
         </nav>
     </body>
 
+<div id="delete" class="overlay">
+    <div class="popup">
+        <h2>Are you sure you want to delete {{board.name}}?</h2>
+        <div class="content">
+            <a href="/users/{{user.id}}/delete" class="btn btn-secondary" style="background-color: #276190;">Delete forever</a>
+            <a href="#" class="btn btn-secondary" style="background-color: #276190;">Cancel</a>
+        </div>
+    </div>
+</div>
 
     {{!-- Username and avatar display --}}
     <div class="jumbotron" style="background-color: #98CAEC;">
-        <h1 class="display-4">{{user.username}}'s Profile</h1>
-        <div class="avatar-box">
+        <h1 class="display-4" style='position:relative;left:0'>{{user.username}}'s Profile
+        <div class="avatar-box" style="position: relative;left:0;">
             <img class="profile-pic" src={{user.avatar}} />
         </div>
     </div>
@@ -59,13 +72,22 @@
                 {{#each tasks}}
                     <div class='todo-column1'>
                         <div class="card1">
+                            <a class="close" href="/tasks/{{this.id}}/removeuser">&times;</a>
+
                         <div class="cardbodyass" id='${task.id}' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
                             <h4 class="card-title">{{this.taskName}} </h4>
-                            <h6 class="card-subtitle mb-2 text-muted">{{this.deadline}}</h6>
+                            <h6 class="card-subtitle mb-2 text-muted" id='Due{{this.id}}'></h6>
                             <h5 class="card-text">{{this.taskDescription}}</h5>
                         </div>
                     </div>
                     </div>
+
+                    <script>
+                        if ('{{this.deadline}}' != 'Invalid Date'){
+                        var dueDate = '{{this.deadline}}'
+                        document.getElementById('Due{{this.id}}').innerHTML = `Due ${dueDate.slice(0,15)}`;
+                        }
+                    </script>
                 {{/each}}
             </div>
             <div class='flexbox-column'>
@@ -74,7 +96,7 @@
                 </div>
                 {{#each boards}}
                     <div class="todo-column1" >
-                        <div class="card1>
+                        <div class="card1">
                     <a href='/boards/{{this.id}}'>
                         <div class="cardbodyass">
                             <h4 class="card-title">{{this.name}}</h4>

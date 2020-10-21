@@ -16,18 +16,31 @@
                     <a class="nav-link" href="#createTask" style="color: white;">Add task <span class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/boards/{{board.id}}/delete" style="color: white;">Delete Board</a>
-                </li>
-                <li class="nav-item active">
                     <a class="nav-link" href="#addUser" style="color: white;">Assign User To Board</a>
                 </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="#removeUser" style="color: white;">Remove User From Board</a>
                 </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="#editBoard" style="color: white;">Edit Board</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="#delete" style="color: white;">Delete Board</a>
+                </li>
             </ul>
         </div>
     </nav>
 
+
+<div id="delete" class="overlay">
+    <div class="popup">
+        <h2>Are you sure you want to delete {{board.name}}?</h2>
+        <div class="content">
+            <a href="/boards/{{board.id}}/delete" class="btn btn-secondary" style="background-color: #276190;">Delete forever</a>
+            <a href="#" class="btn btn-secondary" style="background-color: #276190;">Cancel</a>
+        </div>
+    </div>
+</div>
 
 <div id="removeUser" class="overlay">
     <div class="popup">
@@ -118,15 +131,36 @@
 	</div>
 </div>
 
+
+<div id="editBoard" class="overlay">
+	<div class="popup">
+		<h2>Edit Board</h2>
+		<a class="close" href="#">&times;</a>
+		<div class="content">
+			<form action='/boards/{{board.id}}/edit' method='POST'>
+                <label>Name:</label>
+                <input type='text' name = 'name' value='{{board.name}}' required/><br>
+                <label>Description:</label>
+                <input type='text' name ='description' value='{{board.description}}' required/><br>
+                <button class="popupbtn">submit</button>
+            </form>
+		</div>
+	</div>
+</div>
+
     <div class="jumbotron" style="background-color: #98CAEC;">
-        <h1 class="display-4">{{board.name}}</h1>
-        {{#each boardUsers}}
-        <a href="/users/{{this.id}}">
-        <div class="avatar-box" >
-            <img class="profile-pic" src={{this.avatar}} />
-        </div>
-        </a>
-        {{/each}}
+        <h1 class="display-4">{{board.name}}
+            <h5 class='lead' >{{board.description}}</h5>
+            <div class='media'>
+            {{#each boardUsers}}
+                <a href="/users/{{this.id}}">
+                    <div class="avatar-box-board-head" >
+                        <img class="profile-pic" src={{this.avatar}} />
+                    </div>
+                </a>
+            {{/each}}</h1>
+            </div>
+
     </div>
 
 <main id="app"></main>
@@ -149,7 +183,7 @@ console.log('script running')
                             ${state.toDo.map(task=>`
                             <div class="card border-0"  dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId] ? `<img class='avatar-box-board' src='${state.users[task.UserId].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -163,7 +197,7 @@ console.log('script running')
                                     </div>
                                         </form>
                                     </div>
-                                   
+
                                 </div>
                             </div>
 
@@ -187,7 +221,7 @@ console.log('script running')
                                             </select><br>
                                             <label>Assignee</label>
                                             <select class="selectassign"name='assignee'>
-                                                <option name="none"></option>
+                                                <option name="none">none</option>
                                                 {{#each users}}
                                                     <option name="{{this.username}}"> {{this.username}} </option>
                                                 {{/each}}
@@ -211,7 +245,7 @@ console.log('script running')
 
                             <div class="card border-0"  dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId] ? `<img class='avatar-box-board' src='${state.users[task.UserId].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -246,7 +280,7 @@ console.log('script running')
                                             </select><br>
                                             <label>Assignee</label>
                                             <select name='assignee'>
-                                                <option name="none"></option>
+                                                <option name="none">none</option>
                                                 {{#each users}}
                                                     <option name="{{this.username}}"> {{this.username}} </option>
                                                 {{/each}}
@@ -270,7 +304,7 @@ console.log('script running')
 
                             <div class="card border-0" dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId] ? `<img class='avatar-box-board' src='${state.users[task.UserId].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -305,7 +339,7 @@ console.log('script running')
                                             </select><br>
                                             <label>Assignee</label>
                                             <select name='assignee'>
-                                                <option name="none"></option>
+                                                <option name="none">none</option>
                                                 {{#each users}}
                                                     <option name="{{this.username}}"> {{this.username}} </option>
                                                 {{/each}}

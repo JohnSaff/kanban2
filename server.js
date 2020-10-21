@@ -5,11 +5,11 @@ const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-acce
 const { response } = require('express')
 const app = express()
 const {Board,Task,User,sequelize} = require("./models")
+const { TestScheduler } = require('jest')
 
 const handlebars = expressHandlebars({
     handlebars: allowInsecurePrototypeAccess(Handlebars)
 })
-//change
 app.use(express.static('public'))
 app.engine('handlebars', handlebars)
 app.set('view engine', 'handlebars')
@@ -20,6 +20,10 @@ app.listen(process.env.PORT, () => {
     sequelize.sync(() => {
         console.log('Kanban app running on port', process.env.PORT)
     })
+})
+
+Handlebars.registerHelper('shortenDate',function(date){
+    return date.slice(0,15);
 })
 //---------rendering create User page ------
 
@@ -114,6 +118,14 @@ app.post('/boards/:boardid/users/remove',async (req,res)=>{
     res.redirect(`/boards/${req.params.boardid}`)
 })
 
+//---remove assigned task from user page ----
+app.get('/tasks/:taskid/removeuser',async (req,res)=>{
+    const task = await Task.findByPk(req.params.taskid)
+    const user = await task.getUser()
+    await user.removeTask(task)
+    res.redirect(`/users/${user.id}`)
+})
+
 //----create task -----
 
 app.post('/boards/:boardid/tasks/create',async (req,res) =>{
@@ -124,6 +136,8 @@ app.post('/boards/:boardid/tasks/create',async (req,res) =>{
     console.log(user)
     if(user[0]){
         await user[0].addTask(task)
+        const board = await Board.findByPk(req.params.boardid)
+        await board.addUser(user)
     }
     res.redirect(`/boards/${req.params.boardid}`)
 })
@@ -133,7 +147,7 @@ app.post('/boards/:boardid/tasks/create',async (req,res) =>{
 app.post('/boards/:boardid/edit',async (req,res) =>{
     const board = await Board.findByPk(req.params.boardid)
     await board.update({name:req.body.name,description:req.body.description})
-    res.redirect('/')
+    res.redirect(`/boards/${req.params.boardid}`)
 })
 
 //----update task-----
@@ -144,8 +158,15 @@ app.post('/boards/:boardid/tasks/:taskid/update',async (req,res)=>{
     const users = await User.findAll({where:{username:`${req.body.assignee}`}})
     const user = users[0]
     console.log(user)
-    await task.setUser(user)
-    console.log(task)
+    if(user){
+        await task.setUser(user)
+        console.log(task)
+        const board = await Board.findByPk(req.params.boardid)
+        await board.addUser(user)
+    }else if (await task.getUser()){
+        const currentUser = await task.getUser()
+        currentUser.removeTask(task)
+    }
     res.redirect(`/boards/${req.params.boardid}`)
 })
 
@@ -159,8 +180,8 @@ app.post('/users/:userid/edit',async (req,res) =>{
 
 //-----destroy user ----
 
-app.get('/user/:userid/delete', async (req,res)=>{
-    await Task.findByPk(req.params.userid).then(user =>{
+app.get('/users/:userid/delete', async (req,res)=>{
+    await User.findByPk(req.params.userid).then(user =>{
         user.destroy()
     })
     res.redirect('/')
@@ -178,6 +199,9 @@ app.get('/boards/:boardid/tasks/:taskid/delete', async (req,res)=>{
 
 app.get('/boards/:boardid/delete', async (req,res)=>{
     const board = await Board.findByPk(req.params.boardid)
+    tasks = await board.getTasks()
+    console.log(tasks)
+    await tasks.map(task => task.destroy())
     await board.destroy()
     res.redirect('/')
 })
