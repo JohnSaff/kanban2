@@ -148,32 +148,53 @@
 	</div>
 </div>
 
-    <div class="jumbotron" style="background-color: #98CAEC;">
-        <h1 class="display-4">{{board.name}}
-            <h5 class='lead' >{{board.description}}</h5>
-            <div class='media'>
-            {{#each boardUsers}}
-                <a href="/users/{{this.id}}">
-                    <div class="avatar-box-board-head" >
-                        <img class="profile-pic" src={{this.avatar}} />
-                    </div>
-                </a>
-            {{/each}}</h1>
-            </div>
+{{!-- <div class="jumbotron" style="background-color: #98CAEC;">
+    <h1 class="display-4">{{board.name}}
+        <h5 class='lead' >{{board.description}}</h5>
+        <div class='media'>
+        {{#each boardUsers}}
+            <a href="/users/{{this.id}}">
+                <div class="avatar-box-board-head" draggable="true"  ondragstart="app.run('onDragStart',event)" >
+                    <img id={{this.username}} class="profile-pic" src={{this.avatar}} />
+                </div>
+            </a>
+        {{/each}}</h1>
+        </div>
 
-    </div>
+    </div> --}}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.1/socket.io.js" integrity="sha512-AcZyhRP/tbAEsXCCGlziPun5iFvcSUpEz2jKkx0blkYKbxU81F+iq8FURwPn1sYFeksJ+sDDrI5XujsqSobWdQ==" crossorigin="anonymous"></script>
 
 <main id="app"></main>
 
 <script>
+
+var socket = io()
+socket.emit('update')
+
 console.log('script running')
     const state = {
         toDo: [],
         doing: [],
         done:[],
-        users:[]
+        users:[],
+        boardUsers:[]
     }
     const view = (state)=>`
+    <div class="jumbotron" style="background-color: #98CAEC;">
+    <h1 class="display-4">{{board.name}} </h1>
+        <h5 class='lead' >{{board.description}}</h5>
+        <div class='media'>
+        ${state.boardUsers.map(user =>`
+            <a href="/users/${user.id}">
+                <div class="avatar-box-board-head"  >
+                    <img id='${user.id}' class="profile-pic" src='${user.avatar}' />
+                </div>
+            </a>
+        `).join()}
+        </div>
+
+    </div>
         <div class="tasks-boards-flexbox">
             <div class="flexbox-row">
                 <div class="flexbox-column">
@@ -183,7 +204,7 @@ console.log('script running')
                             ${state.toDo.map(task=>`
                             <div class="card border-0"  dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users.find(user=> user.id == task.UserId) ? `<img class='avatar-box-board' src='${(state.users.find(user=> user.id == task.UserId).avatar)}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -223,7 +244,7 @@ console.log('script running')
                                             <select class="selectassign"name='assignee'>
                                                 <option name="none">none</option>
                                                 {{#each users}}
-                                                    <option name="{{this.username}}"> {{this.username}} </option>
+                                                    <option name="{{this.username}}"${(task.UserId == {{this.id}}) ? "selected":""}> {{this.username}} </option>
                                                 {{/each}}
                                             </select><br><br>
                                             <label>Deadline</label>
@@ -245,7 +266,7 @@ console.log('script running')
 
                             <div class="card border-0"  dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users.find(user=> user.id == task.UserId) ? `<img class='avatar-box-board' src='${(state.users.find(user=> user.id == task.UserId).avatar)}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -282,7 +303,7 @@ console.log('script running')
                                             <select name='assignee'>
                                                 <option name="none">none</option>
                                                 {{#each users}}
-                                                    <option name="{{this.username}}"> {{this.username}} </option>
+                                                    <option name="{{this.username}}"${(task.UserId == {{this.id}}) ? "selected":""}> {{this.username}} </option>
                                                 {{/each}}
                                             </select><br><br>
                                             <label>Deadline</label>
@@ -304,7 +325,7 @@ console.log('script running')
 
                             <div class="card border-0" dragable='true' ondragstart="app.run('onDragStart',event)" style="width: 18rem;">
                                 <div class="card-body" id='${task.id}' draggable='true' style="${(task.priority =="Low") ? "border: 5px solid green;": (task.priority =="Medium") ? "border: 5px solid yellow;" : (task.priority =="High") ? "border: 5px solid orange;" : "border: 5px solid red;"}">
-                                    <h4 class="card-title">${task.taskName} ${(state.users[task.UserId-1] ? `<img class='avatar-box-board' src='${state.users[task.UserId-1].avatar}'>`:'')}</h4>
+                                    <h4 class="card-title">${task.taskName} ${(state.users.find(user=> user.id == task.UserId) ? `<img class='avatar-box-board' src='${(state.users.find(user=> user.id == task.UserId).avatar)}'>`:'')}</h4>
                                     <h6 class="card-subtitle mb-2 text-muted">${task.deadline ? `Due ${task.deadline.slice(0,10)}`:''}</h6>
                                     <h5 class="card-text">${task.taskDescription}</h5>
                                     <div class="btn-group" role="group" aria-label="Third group">
@@ -341,7 +362,7 @@ console.log('script running')
                                             <select name='assignee'>
                                                 <option name="none">none</option>
                                                 {{#each users}}
-                                                    <option name="{{this.username}}"> {{this.username}} </option>
+                                                    <option name="{{this.username}}"${(task.UserId == {{this.id}}) ? "selected":""}> {{this.username}} </option>
                                                 {{/each}}
                                             </select><br><br>
                                             <label>Deadline</label>
@@ -377,6 +398,7 @@ const update={
             body:JSON.stringify({id:id,status:'to do'})
         }
         fetch(`/tasks/${id}/update`,postRequest).then(()=>app.run('getTasks'))
+        socket.emit('update')
         return state
     },
     onDropDoing: async (state,event)=>{
@@ -391,6 +413,7 @@ const update={
             body:JSON.stringify({id:id,status:'in progress'})
         }
         fetch(`/tasks/${id}/update`,postRequest).then(()=>app.run('getTasks'))
+        socket.emit('update')
         return state
     },
     onDropDone: async (state,event)=>{
@@ -405,6 +428,12 @@ const update={
             body:JSON.stringify({id:id,status:'done'})
         }
         fetch(`/tasks/${id}/update`,postRequest).then(()=>app.run('getTasks'))
+        socket.emit('update')
+        return state
+    },
+    onDragStart: (state,event) =>{
+        console.log(event.target)
+        event.dataTransfer.setData('text',event.target.id)
         return state
     },
     delete: (state,form)=>{
@@ -418,13 +447,7 @@ const update={
             body:JSON.stringify({id:id})
         }
         fetch(`/tasks/${id}/delete`,postRequest).then(()=>app.run('getTasks'))
-    },
-    edit:(state,form)=>{
-
-    },
-    onDragStart: (state,event) =>{
-        console.log(event.target)
-        event.dataTransfer.setData('text',event.target.id)
+        socket.emit('update')
         return state
     },
     getTasks: async (state)=>{
@@ -432,10 +455,18 @@ const update={
         state.doing = await fetch('/boards/{{board.id}}/tasks/doing').then(res=>res.json())
         state.toDo = await fetch('/boards/{{board.id}}/tasks/todo').then(res=>res.json())
         state.users = await fetch('/users').then(res=>res.json())
+        state.boardUsers = await fetch('/boards/{{board.id}}/users').then(res=>res.json())
         return state
     }
 }
+
 app.start('app',state,view,update)
+socket.on('update',()=>{
+    app.run('getTasks')
+})
+socket.on('goHome',()=>{
+    fetch('/')
+})
 app.run('getTasks')
 </script>
 

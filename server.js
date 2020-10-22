@@ -6,6 +6,10 @@ const { response } = require('express')
 const app = express()
 const {Board,Task,User,sequelize} = require("./models")
 const { TestScheduler } = require('jest')
+const http = require("http")
+const server = http.createServer(app)
+const io = require('socket.io').listen(server);
+
 
 const handlebars = expressHandlebars({
     handlebars: allowInsecurePrototypeAccess(Handlebars)
@@ -16,15 +20,26 @@ app.set('view engine', 'handlebars')
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
     sequelize.sync(() => {
         console.log('Kanban app running on port', process.env.PORT)
     })
 })
 
-Handlebars.registerHelper('shortenDate',function(date){
-    return date.slice(0,15);
-})
+
+var clients =0
+
+io.on('connection', function(socket) {
+    console.log('-----socket connected----')
+    socket.on('update',function(){
+        console.log('====attempting update======')
+        io.emit("update",'bugfix?')
+    })
+    socket.on('delete',()=>{
+        io.emit('goHome')
+    })
+});
+
 //---------rendering create User page ------
 
 app.get('/users/create',(req,res)=>{
@@ -70,6 +85,10 @@ app.get('/',async (req,res)=>{
     })
     const users = await User.findAll()
     res.render('home',{boards,users})
+})
+
+app.get('/home', (req,res)=>{
+    res.redirect('/')
 })
 
 //-----find user from homepage----
@@ -170,6 +189,8 @@ app.post('/boards/:boardid/tasks/:taskid/update',async (req,res)=>{
     res.redirect(`/boards/${req.params.boardid}`)
 })
 
+
+
 //-----edit user-------
 
 app.post('/users/:userid/edit',async (req,res) =>{
@@ -232,6 +253,16 @@ app.get('/boards/:boardid/tasks/doing',async (req,res)=>{
 app.get('/users',async (req,res) =>{
     const users = await User.findAll()
     res.send(users)
+})
+
+app.get('/boards/:boardid/users', async (req,res) =>{
+    const board = await Board.findByPk(req.params.boardid)
+    const boardUsers = await board.getUsers()
+    res.send(boardUsers)
+})
+
+app.get('/tasks/:taskid/updateuser',async (req,res)=>{
+    const task = task.get
 })
 
 //-----changing status of tasks from board-------
